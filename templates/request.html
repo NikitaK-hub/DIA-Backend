@@ -1,0 +1,58 @@
+{{template "header".}}
+<div class="request">
+    {{range $request := .request}}
+        {{range $cost := $.costs}}
+            {{if eq $request.Cost_id $cost.ID}}
+            <div class="request_conteiner">
+                <div class="class center">
+                    <div class="card">
+                        <h3> 
+                            {{$cost.Title}}
+                        </h3>
+                        <img src="{{$cost.Img}}" style="width: 80%; height: 80%; margin-top: 3%; margin-bottom: 5%;">
+                    </div>
+                </div>
+
+                <div class="cost_navigation">
+                    <div class="request_navigation">
+                        <div class="cost_price">
+                            Стоимость
+                            <div class="input_price">
+                                {{$request.Price}}
+                            </div>
+                        </div>
+                        <img src="/static/img/bin.png" style="height: 45px; width: 35px; cursor: pointer; margin-left: 10%; margin-top: 5%;" alt="Удалить">
+                    </div>
+                    <!-- <div class="request_button">
+                        <a href="/cost/{{.ID}}" class="button card_button info"> Подробнее </a>
+                        {{if $request.Main}}
+                            <a class="button card_button main"> Основной </a> 
+                        {{else}}
+                            <a class="button card_button not_main"> Основной </a>
+                        {{end}}
+                    </div> -->
+                </div>
+            </div>
+            {{end}}
+        {{end}}
+    {{end}}
+</div>
+
+<div class="calculations">
+    <div class="volume">
+        Укажиет объем выпуска
+        <div class="volume input">
+            1-й выпуск
+            <div class="input_volume">500</div>
+        </div>
+        <div class="volume input">
+            2-й выпуск
+            <div class="input_volume">1000</div>
+        </div>
+    </div>
+    <a class="button_calculate"> Рассчитать эффект масштаба</a>
+    <div class="ratio">
+        Коэффициент: 1.01
+        <p style="padding-top: 8px;">Положительный эффект масштаба</p>
+    </div>
+</div>
