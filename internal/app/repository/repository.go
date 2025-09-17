@@ -27,6 +27,28 @@ type Request struct {
 	Main    bool
 }
 
+type RequestView struct {
+	ID         int
+	Min_volume int
+	Max_volume int
+	Ratio      float64
+}
+
+func (r *Repository) GetRequestView() ([]RequestView, error) {
+	requestView := []RequestView{
+		{
+			ID:         1,
+			Min_volume: 500,
+			Max_volume: 1000,
+			Ratio:      1.01,
+		},
+	}
+	if len(requestView) == 0 {
+		return nil, fmt.Errorf("массив пустой")
+	}
+	return requestView, nil
+}
+
 func (r *Repository) GetRequest() ([]Request, error) {
 	request := []Request{
 		{

@@ -76,8 +76,14 @@ func (h *Handler) GetRequest(ctx *gin.Context) {
 		logrus.Error(err)
 	}
 
+	requestView, err := h.Repository.GetRequestView()
+	if err != nil {
+		logrus.Error(err)
+	}
+
 	ctx.HTML(http.StatusOK, "request.html", gin.H{
-		"request": request,
-		"costs":   costs,
+		"request":     request,
+		"costs":       costs,
+		"requestView": requestView,
 	})
 }

@@ -37,22 +37,23 @@
         {{end}}
     {{end}}
 </div>
-
-<div class="calculations">
-    <div class="volume">
-        Укажиет объем выпуска
-        <div class="volume input">
-            1-й выпуск
-            <div class="input_volume">500</div>
+{{range.requestView}}
+    <div class="calculations">
+        <div class="volume">
+            Укажиет объем выпуска
+            <div class="volume input">
+                1-й выпуск
+                <div class="input_volume">{{.Min_volume}}</div>
+            </div>
+            <div class="volume input">
+                2-й выпуск
+                <div class="input_volume">{{.Max_volume}}</div>
+            </div>
         </div>
-        <div class="volume input">
-            2-й выпуск
-            <div class="input_volume">1000</div>
+        <a class="button_calculate"> Рассчитать эффект масштаба</a>
+        <div class="ratio">
+            Коэффициент: {{.Ratio}}
+            <p style="padding-top: 8px;">Положительный эффект масштаба</p>
         </div>
     </div>
-    <a class="button_calculate"> Рассчитать эффект масштаба</a>
-    <div class="ratio">
-        Коэффициент: 1.01
-        <p style="padding-top: 8px;">Положительный эффект масштаба</p>
-    </div>
-</div>
+{{end}}
