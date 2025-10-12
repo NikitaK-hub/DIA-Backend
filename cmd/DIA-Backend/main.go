@@ -1,13 +1,18 @@
 package main
 
 import (
-	"log"
-
 	"DIA_Backend/internal/api"
+
+	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	log.Println("Application start!")
+	err := godotenv.Load("deploy/.env")
+	if err != nil {
+		panic(err)
+	}
+
+	logrus.SetLevel(logrus.ErrorLevel)
 	api.StartServer()
-	log.Println("Application terminated!")
 }

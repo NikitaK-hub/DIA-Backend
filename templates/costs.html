@@ -1,0 +1,42 @@
+{{template "header".}}
+
+<html lang="rus">
+    <body>
+        <div class="count_request req">
+            Издержки
+            {{if .costRequestID}}
+                <a class="count_request" href="/cost_request/{{.costRequestID}}">
+                    <img src="/static/img/request.png" style="height: 30px; width: 30px;" alt="Корзина">
+                    {{.costRequestEntryCount}}
+            {{else}}
+                     <img src="/static/img/request.png" style="height: 30px; width: 30px;" alt="Корзина">
+            {{end}}
+            </a>
+        </div>
+        <form action="/costs" method="GET">
+            <input type="text" name="cost_title" class="search field" placeholder="Поиск..." value="{{ .cost_title }}">
+            <button type="submit" class="search button">Найти</button>
+        </form>
+
+        <div class="cards_container">
+                {{range .costs}}
+                <div class="class">
+                    <div class="card">
+                        <h3> {{.Title}}</h3>
+                        <img src="{{.Img}}" style="width: 80%; height: 80%; margin-top: 3%; margin-bottom: 5%;">
+                    </div>
+
+                    <form action="/cost/{{.ID}}" method="get" style="display: inline">
+                        <input type="hidden" name="cost-id" value="{{ .ID }}" />
+                        <button type="submit" class="card_button">Подробнее</button>
+                    </form>
+
+                    <form action="/costs" method="post" style="display: inline">
+                        <input type="hidden" name="cost-id" value="{{ .ID }}" />
+                        <button type="submit" class="card_button">Добавить</button>
+                    </form>
+                </div>
+            {{end}}
+        </div>
+    </body>
+</html>

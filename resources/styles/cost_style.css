@@ -56,7 +56,10 @@ h5{
 
 .search{
     color: black;
-    background-color: #FDF1E0;
+    background-color: #F4E5CF;
+    border-radius: 10px;   
+    border: 2px solid #000;
+    color: #000;
 }
 
 .field{
@@ -64,14 +67,15 @@ h5{
     margin-top: 2%;
     margin-left: 5%;
     height: 30px;
-    width: 150px;   
+    width: 150px;
+    padding-left: 0.5%;
 }
 
 .button{    
     color: #000;
     margin-left: 1%;
-    height: 22px;
-    width: 50px;  
+    height: 25px;
+    width: 55px;  
     cursor: pointer;
 }
 
@@ -107,20 +111,14 @@ h5{
     cursor: pointer;
     text-decoration: none;
     padding-left: 2%;
+    padding-right: 2%; /*new*/
     padding-top: 2px;
-}
-
-.info{
-    border: 2px solid #1371FD;
-    color: #1371FD;
+    border: 2px solid #000;
+    color: #000;
+    background-color: #F4E5CF;
     width: 100px;
-}
-
-.add{
-    border: 2px solid #145802;
-    color: #145802;
-    width: 55%;
-
+    height: 30px;
+    margin-left: 5%;
 }
 
 .cost{
@@ -165,7 +163,7 @@ h5{
 .request_conteiner{
     display: flex;
     align-items: start;
-    height: 18rem;
+    /* height: 18rem; */
 }
 
 .request_navigation{
@@ -179,7 +177,7 @@ h5{
     align-items: center;
     gap: 5%;
     height: 70px;
-    width: 200%;
+    width: 85%; /*200%*/
     background-color: #F4E5CF;
     margin-top: 7%;
     border-radius: 30px;
@@ -226,28 +224,26 @@ h5{
 .calculations{
     display: flex;
     align-items: center;
-    margin-left: 23%;
+    margin-left: 33%; /*23%*/
     gap: 5%;
     margin-bottom: 3%;
     margin-top: 3%;
-    color: #145802;
+    color: #F4E5CF;
 }
 
 .volume{
     font-size: large;
-    color: #145802;
 }
 
 .input{
     display: flex;
     align-items: center;
     margin: 5%;
-    color: #145802;
 }
 
 .input_volume{
-    border: 2px solid #145802;
-    color: #145802;
+    border: 2px solid #F4E5CF;
+    color: #F4E5CF;
     text-align: center;
     padding-top: 5px;
     border-radius: 20px;
@@ -298,4 +294,14 @@ h5{
     font-size: 28;
     font-weight: 600;
     gap: 1%;
+}
+
+.delete_request{
+    border: 2px solid #000;
+    color: #000;
+    background-color: #F4E5CF;
+    width: 100px;
+    border-radius: 20px;
+    font-size: 20;
+    cursor: pointer;
 }
