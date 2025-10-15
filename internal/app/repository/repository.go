@@ -27,19 +27,12 @@ type Request struct {
 	Main    bool
 }
 
-func (r *Repository) GetRequest() ([]Request, error) {
-	request := []Request{
-		{
-			ID:      1,
+func (r *Repository) GetRequest() (map[int]Request, error) {
+	request := map[int]Request{
+		1: {
 			Cost_id: 1,
 			Price:   10000,
 			Main:    true,
-		},
-		{
-			ID:      2,
-			Cost_id: 3,
-			Price:   5000,
-			Main:    false,
 		},
 	}
 	if len(request) == 0 {
