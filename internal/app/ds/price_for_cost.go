@@ -6,5 +6,4 @@ type Price_request_for_cost struct {
 	Cost_request Cost_request `gorm:"foreignKey:ID_request"`
 	Cost         Cost         `gorm:"foreignKey:ID_cost"`
 	Cost_price   float64      `gorm:"type:double precision"`
-	Main         bool         `gorm:"type:boolean; default:False "`
 }

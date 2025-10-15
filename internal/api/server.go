@@ -14,6 +14,7 @@ func StartServer() {
 	if err != nil {
 		panic(err)
 	}
+	defer repository.CloseDBConn(repo)
 	router := gin.Default()
 	handler.RegisterHandlers(router, repo)
 	logrus.Debug("Starting server")

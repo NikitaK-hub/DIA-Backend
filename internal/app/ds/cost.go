@@ -6,4 +6,5 @@ type Cost struct {
 	Img         string `gorm:"type:varchar"`
 	Info        string `gorm:"type:varchar"`
 	Type_change bool   `gorm:"type:boolean not null"`
+	IsDeleted   bool   `gorm:"boolean; not null; default: false"`
 }
