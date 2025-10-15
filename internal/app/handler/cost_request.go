@@ -170,7 +170,7 @@ func (h *CostRequestHandler) UpdateCostRequest(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.repo.CostRequest.UpdateCostRequest(id); err != nil {
+	if err := h.repo.CostRequest.UpdateCostRequest(id, req.Min_volume, req.Max_volume); err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update cost request"})
 		return
@@ -205,12 +205,13 @@ func (h *CostRequestHandler) ResolveCostRequest(ctx *gin.Context) {
 		return
 	}
 
-	ratioCalculationResult := h.repo.CostRequest.CalculateRatio(id)
+	// ratioCalculationResult := h.repo.CostRequest.CalculateRatio(id)
 
 	deliveryDate := time.Now().AddDate(0, 1, 0)
 
 	moderatorID := uint64(2)
-	if err := h.repo.CostRequest.ResolveOrRejectRequest(id, moderatorID, 4); err != nil {
+	calculatedRatio, err := h.repo.CostRequest.ResolveOrRejectRequest(id, moderatorID, 4)
+	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -219,7 +220,7 @@ func (h *CostRequestHandler) ResolveCostRequest(ctx *gin.Context) {
 	response := gin.H{
 		"message": "Cost request resolved successfully",
 		"calculated_data": gin.H{
-			"ratio calculation result": ratioCalculationResult,
+			"ratio calculation result": calculatedRatio,
 			"delivery_date":            deliveryDate.Format("2006-01-02"),
 		},
 	}
@@ -233,9 +234,9 @@ func (h *CostRequestHandler) RejectCostRequest(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid cost request ID"})
 		return
 	}
-
 	moderatorID := uint64(2)
-	if err := h.repo.CostRequest.ResolveOrRejectRequest(id, moderatorID, 5); err != nil {
+	_, err = h.repo.CostRequest.ResolveOrRejectRequest(id, moderatorID, 5)
+	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

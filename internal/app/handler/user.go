@@ -64,7 +64,7 @@ func (h *UserHandler) Register(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully",
-		"user_id": user.ID,
+		"id_user": user.ID,
 	})
 }
 
@@ -120,7 +120,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
-		"user_id": user.ID,
+		"id_user": user.ID,
 		"is_mod":  user.IsMod,
 	})
 }

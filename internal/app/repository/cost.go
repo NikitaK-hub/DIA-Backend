@@ -114,7 +114,7 @@ func (r *CostRepository) AddCostToDraftRequest(costID uint64, userID uint64) err
 		}
 
 		var request ds.Cost_request
-		err := tx.Where("status = 1 AND user_id = ?", userID).First(&request).Error
+		err := tx.Where("status = 1 AND id_user = ?", userID).First(&request).Error
 		if err == gorm.ErrRecordNotFound {
 			request = ds.Cost_request{
 				Status:    1,

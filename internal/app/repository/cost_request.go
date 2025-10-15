@@ -13,14 +13,6 @@ type CostRequestRepository struct {
 	db *gorm.DB
 }
 
-func (r *CostRequestRepository) DeleteRequest(id uint64, userID uint64) any {
-	panic("unimplemented")
-}
-
-func (r *CostRequestRepository) UpdateCostRequest(id uint64) any {
-	panic("unimplemented")
-}
-
 func NewCostRequestRepository(db *gorm.DB) *CostRequestRepository {
 	return &CostRequestRepository{db: db}
 }
@@ -28,7 +20,7 @@ func NewCostRequestRepository(db *gorm.DB) *CostRequestRepository {
 func (r *CostRequestRepository) GetDraftRequestInfo(userID uint64) (uint64, int, error) {
 	var request ds.Cost_request
 	err := r.db.
-		Where("status = 1 AND user_id = ?", userID).
+		Where("status = 1 AND id_user = ?", userID).
 		First(&request).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -57,7 +49,7 @@ func (r *CostRequestRepository) GetCostRequests(statusFilter uint8, dateFrom, da
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username")
 		}).
-		Preload("Morderator", func(db *gorm.DB) *gorm.DB {
+		Preload("Moderator", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username")
 		}).
 		Where("status != 1 AND status != 2") // исключаем черновики и удалённые
@@ -86,7 +78,7 @@ func (r *CostRequestRepository) GetCostRequestByID(id uint64, ID_user uint64) (*
 	err := r.db.
 		Preload("Price_request_for_cost").
 		Preload("Price_request_for_cost.Cost").
-		Where("status = 2 and ID_user = ?", ID_user).
+		Where("status = 1 and ID_user = ?", ID_user).
 		First(&costRequest, id).Error
 
 	if err != nil {
@@ -101,7 +93,7 @@ func (r *CostRequestRepository) FormRequest(id uint64, userID uint64) error {
 		var request ds.Cost_request
 		err := tx.
 			Preload("Price_request_for_cost").
-			Where("id = ? AND user_id = ? AND status = 1", id, userID).
+			Where("id = ? AND id_user = ? AND status = 1", id, userID).
 			First(&request).Error
 
 		if err != nil {
@@ -119,12 +111,12 @@ func (r *CostRequestRepository) FormRequest(id uint64, userID uint64) error {
 	})
 }
 
-func (r *CostRequestRepository) ResolveOrRejectRequest(id uint64, moderatorID uint64, status uint8) error {
+func (r *CostRequestRepository) ResolveOrRejectRequest(id uint64, moderatorID uint64, status uint8) (float64, error) {
 	if status != 4 && status != 5 {
-		return errors.New("invalid status for moderator action")
+		return 0, errors.New("invalid status for moderator action")
 	}
-
-	return r.db.Transaction(func(tx *gorm.DB) error {
+	var calculatedRatio float64
+	err := r.db.Transaction(func(tx *gorm.DB) error {
 		var request ds.Cost_request
 		err := tx.
 			Preload("Price_request_for_cost").
@@ -136,17 +128,17 @@ func (r *CostRequestRepository) ResolveOrRejectRequest(id uint64, moderatorID ui
 			return err
 		}
 
-		calculatedRatio := r.CalculateRatio(request.ID)
+		calculatedRatio = r.CalculateRatio(request.ID)
 
 		updates := map[string]interface{}{
-			"status":                   status,
-			"id_moderator":             moderatorID,
-			"closed_at":                time.Now(),
-			"ratio_calculation_result": calculatedRatio,
+			"status":       status,
+			"id_moderator": moderatorID,
+			"closed_at":    time.Now(),
 		}
 
 		return tx.Model(&request).Updates(updates).Error
 	})
+	return calculatedRatio, err
 }
 
 func (r *CostRequestRepository) DeleteCostRequest(id uint64, userID uint64) error {
@@ -200,6 +192,27 @@ func (r *CostRequestRepository) UpdateRequestToCost(requestID uint64, costID uin
 	})
 }
 
+func (r *CostRequestRepository) UpdateCostRequest(id uint64, Min_volume *uint64, Max_volume *uint64) error {
+	updates := make(map[string]interface{})
+
+	if Min_volume != nil {
+		updates["Min_volume"] = *Min_volume
+	}
+
+	if Max_volume != nil {
+		updates["Max_volume"] = *Max_volume
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return r.db.
+		Model(&ds.Cost_request{}).
+		Where("id = ? AND status != 2", id).
+		Updates(updates).Error
+}
+
 func (r *CostRequestRepository) CalculateRatio(requestID uint64) float64 {
 	var priceRequestToCosts []ds.Price_request_for_cost
 
@@ -212,9 +225,9 @@ func (r *CostRequestRepository) CalculateRatio(requestID uint64) float64 {
 		return 0
 	}
 
-	var CalculationResultFixCosts = 0.0
-	var CalculationResultMinChangeCosts = 0.0
-	var CalculationResultMaxChangeCosts = 0.0
+	var CalculationResultFixCosts float64 = 0
+	var CalculationResultMinChangeCosts float64 = 0
+	var CalculationResultMaxChangeCosts float64 = 0
 	for _, priceRequestToCost := range priceRequestToCosts {
 		cost := priceRequestToCost.Cost
 		request := priceRequestToCost.Cost_request
@@ -264,4 +277,11 @@ func (r *CostRequestRepository) AddCostToCostRequest(costID uint64, userID uint6
 		}
 		return tx.Create(&costRequestToCost).Error
 	})
+}
+
+func (r *CostRequestRepository) DeleteRequest(id uint64, userID uint64) error {
+	return r.db.
+		Model(&ds.Cost_request{}).
+		Where("id = ? AND id_user = ? AND status = 1", id, userID).
+		Update("status", 2).Error
 }

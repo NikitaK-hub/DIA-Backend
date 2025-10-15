@@ -33,14 +33,15 @@ type UpdateCostRequest struct {
 type CostsFilterResponse struct {
 	ID       uint64 `json:"id"`
 	Title    string `json:"title"`
+	Info     string `json:"info"`
 	ImageURL string `json:"image_url"`
 }
 
 type CostResponse struct {
 	ID    uint64 `json:"id"`
 	Title string `json:"title"`
-	Img   string `json:"image_url"`
 	Info  string `json:"info"`
+	Img   string `json:"image_url"`
 	// Type_change bool   `json:"type_change"`
 }
 
@@ -59,6 +60,7 @@ func (h *CostHandler) GetCosts(ctx *gin.Context) {
 		response = append(response, CostsFilterResponse{
 			ID:       cost.ID,
 			Title:    cost.Title,
+			Info:     cost.Info,
 			ImageURL: cost.Img,
 		})
 	}
@@ -84,6 +86,7 @@ func (h *CostHandler) GetCostByID(ctx *gin.Context) {
 	responce := CostResponse{
 		ID:    cost.ID,
 		Title: cost.Title,
+		Info:  cost.Info,
 		Img:   cost.Img,
 	}
 	ctx.JSON(http.StatusOK, responce)

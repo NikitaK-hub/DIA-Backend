@@ -36,7 +36,7 @@ func RegisterHandlers(router *gin.Engine, repo *repository.Repository) {
 	}
 
 	requestCostHandler := NewPriceRequestToCostHandler(repo)
-	requestCostRouter := apiRouter.Group("/cost-request-costs")
+	requestCostRouter := apiRouter.Group("/price-request-costs")
 	{
 		requestCostRouter.DELETE("/:requestId/costs/:costId", requestCostHandler.RemovePriceToRequestConnection)
 		requestCostRouter.PUT("/:requestId/costs/:costId", requestCostHandler.UpdatePriceToRequestConnection)
