@@ -7,13 +7,13 @@ VALUES
 ('Заработная плата', 'http://localhost:9000/costs/salary.png', 'Заработная плата относится к переменной издержкой и зависит от объема производства. При расчете данных издержек стоит учитывать: сдельная оплата труда производственных рабочих расценки за единицу продукции, объем выпуска, премии за перевыполнение плана.', false),
 ('Транспортные расходы', 'http://localhost:9000/costs/transport.png', 'Транспортные расходы относятся к переменной издержкой и зависит от объема производства. При расчете данных издержек стоит учитывать: стоимость топлива, плата за километраж или тонно-километры при использовании сторонних перевозчиков, разовые затраты на доставку товара.', false);
 
+INSERT INTO users (username, password, is_mod) 
+VALUES ('test_user','test_password', false);
+
+INSERT INTO cost_requests (ID_user, ID_moderator, min_volume, max_volume, ratio) 
+VALUES (1, null, 500, 1000, 1.01);
+
 INSERT INTO price_request_for_costs (ID_request, ID_cost, cost_price) 
 VALUES 
 (1,1, 10000),
 (1,3, 5000);
-
-INSERT INTO cost_requests (ID_user, ID_moderator, min_volume, max_volume, ratio) 
-VALUES (1, null, 500, 1000, 1.01)
-
-INSERT INTO users (username, password, is_mod) 
-VALUES ('test_user','test_password', false);
