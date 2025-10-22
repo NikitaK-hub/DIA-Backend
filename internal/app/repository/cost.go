@@ -20,7 +20,7 @@ type CostRepository struct {
 }
 
 func NewCostRepository(db *gorm.DB, minioClient *minio.Client) *CostRepository {
-	return &CostRepository{db: db}
+	return &CostRepository{db: db, minioClient: minioClient}
 }
 
 func (r *CostRepository) GetCost(id uint64) (*ds.Cost, error) {
@@ -102,7 +102,7 @@ func (r *CostRepository) AddCostImage(id uint64, fileHeader *multipart.FileHeade
 			return err
 		}
 
-		return tx.Model(&cost).Update("image_url", imageURL).Error
+		return tx.Model(&cost).Update("img", imageURL).Error
 	})
 }
 
@@ -141,6 +141,10 @@ func (r *CostRepository) AddCostToDraftRequest(costID uint64, userID uint64) err
 const costImagesBucket = "costs"
 
 func (r *CostRepository) SaveImageToMinio(fileName string, fileHeader *multipart.FileHeader) (string, error) {
+	if r.minioClient == nil {
+		return "", fmt.Errorf("minio client is not initialized")
+	}
+
 	file, err := fileHeader.Open()
 	if err != nil {
 		return "", err
@@ -148,6 +152,14 @@ func (r *CostRepository) SaveImageToMinio(fileName string, fileHeader *multipart
 	defer file.Close()
 
 	fileSize := fileHeader.Size
+
+	exists, err := r.minioClient.BucketExists(context.Background(), costImagesBucket)
+	if err != nil {
+		return "", fmt.Errorf("failed to check bucket existence: %v", err)
+	}
+	if !exists {
+		return "", fmt.Errorf("bucket %s does not exist", costImagesBucket)
+	}
 
 	contentType := "application/octet-stream"
 	if strings.HasSuffix(strings.ToLower(fileName), ".jpg") || strings.HasSuffix(strings.ToLower(fileName), ".jpeg") {
@@ -162,7 +174,7 @@ func (r *CostRepository) SaveImageToMinio(fileName string, fileHeader *multipart
 		ContentType: contentType,
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to upload to MinIO: %v", err)
 	}
 
 	return fmt.Sprintf("%s:%s/%s/%s", os.Getenv("MINIO_HOST"), os.Getenv("MINIO_SERVER_PORT"), costImagesBucket, fileName), nil

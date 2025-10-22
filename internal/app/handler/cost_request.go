@@ -34,16 +34,18 @@ type CostRequestResponse struct {
 }
 
 type CostRequestDetailResponse struct {
-	ID                  uint64                             `json:"id"`
-	CreatedAt           time.Time                          `json:"created_at"`
-	Min_volume          uint64                             `json:"Min_volume"`
-	Max_volume          uint64                             `json:"Max_volume"`
+	ID         uint64    `json:"id"`
+	CreatedAt  time.Time `json:"created_at"`
+	Min_volume uint64    `json:"Min_volume"`
+	Max_volume uint64    `json:"Max_volume"`
+	// Ratio               float64                            `json: "Ratio"`
 	PriceRequestToCosts []PriceRequestToCostDetailResponse `json:"price_request_to_costs"`
 }
 
 type PriceRequestToCostDetailResponse struct {
 	Cost_price float64 `json:"cost_price"`
 	CostTitle  string  `json:"cost_title"`
+	CostImg    string  `json: "img"`
 }
 
 func NewCostRequestHandler(repository *repository.Repository) *CostRequestHandler {
@@ -136,12 +138,16 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 		return
 	}
 
+	// var calculatedRatio float64
+	// calculatedRatio = r.CalculateRatio(request.ID)
+
 	// Transform to response with only required fields
 	response := CostRequestDetailResponse{
 		ID:         request.ID,
 		CreatedAt:  request.CreatedAt,
 		Min_volume: request.Min_volume,
 		Max_volume: request.Max_volume,
+		// Ratio: calculatedRatio,
 	}
 
 	// Transform CostRequestToCost items
@@ -149,6 +155,7 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 		costDetail := PriceRequestToCostDetailResponse{
 			CostTitle:  priceToRequest.Cost.Title,
 			Cost_price: priceToRequest.Cost_price,
+			CostImg:    priceToRequest.Cost.Img,
 		}
 		response.PriceRequestToCosts = append(response.PriceRequestToCosts, costDetail)
 	}
