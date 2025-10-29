@@ -31,7 +31,16 @@ func (r *UserRepository) CreateUser(user *ds.User) error {
 
 func (r *UserRepository) GetUserByID(id uint64) (*ds.User, error) {
 	var user ds.User
-	err := r.db.Select("id, username, is_mod").First(&user, id).Error
+	err := r.db.Select("id, uuid, username, role").First(&user, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) GetUserByUUID(uuid string) (*ds.User, error) {
+	var user ds.User
+	err := r.db.Where("uuid = ?", uuid).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +57,7 @@ func (r *UserRepository) GetUserByUsername(username string) (*ds.User, error) {
 }
 
 func (r *UserRepository) UpdateUser(id uint64, username *string, password *string) error {
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 
 	if username != nil {
 		var existing ds.User
@@ -70,6 +79,31 @@ func (r *UserRepository) UpdateUser(id uint64, username *string, password *strin
 	}
 
 	return r.db.Model(&ds.User{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *UserRepository) UpdateUserByUUID(uuid string, username *string, password *string) error {
+	updates := make(map[string]any)
+
+	if username != nil {
+		var existing ds.User
+		err := r.db.Where("username = ? AND uuid != ?", *username, uuid).First(&existing).Error
+		if err == nil {
+			return errors.New("username already taken")
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		updates["username"] = *username
+	}
+
+	if password != nil {
+		updates["password"] = *password
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return r.db.Model(&ds.User{}).Where("uuid = ?", uuid).Updates(updates).Error
 }
 
 func (r *UserRepository) AuthenticateUser(username, password string) (*ds.User, error) {

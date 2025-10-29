@@ -56,7 +56,7 @@ func (r *CostRepository) CreateCost(cost *ds.Cost) error {
 func (r *CostRepository) UpdateCost(id uint64, data *ds.Cost) error {
 	return r.db.Model(&ds.Cost{}).
 		Where("id = ? AND is_deleted = false", id).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"title":       data.Title,
 			"info":        data.Info,
 			"type_change": data.Type_change,

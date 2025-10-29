@@ -3,6 +3,7 @@ package handler
 import (
 	"DIA_Backend/internal/app/repository"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -45,7 +46,7 @@ type CostRequestDetailResponse struct {
 type PriceRequestToCostDetailResponse struct {
 	Cost_price float64 `json:"cost_price"`
 	CostTitle  string  `json:"cost_title"`
-	CostImg    string  `json: "img"`
+	CostImg    string  `json:"img"`
 }
 
 func NewCostRequestHandler(repository *repository.Repository) *CostRequestHandler {
@@ -62,9 +63,33 @@ type UpdateCostRequestResponse struct {
 	Max_volume *uint64 `json:"Max_volume"`
 }
 
+// @Summary      Get cost requests
+// @Description  Get a list of cost requests with optional filtering
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        status query int false "Filter by status"
+// @Param        date_from query string false "Filter by date from (YYYY-MM-DD)"
+// @Param        date_to query string false "Filter by date to (YYYY-MM-DD)"
+// @Security     BearerAuth
+// @Success      200  {array}   CostsRequestsFilterResponse
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /cost-requests [get]
 func (h *CostRequestHandler) GetCostRequestInfo(ctx *gin.Context) {
-	userID := GetFixedUserID()
-	requestID, itemCount, err := h.repo.CostRequest.GetDraftRequestInfo(userID)
+	userUUID, _, ok := GetUserFromContext(ctx)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	user, err := h.repo.User.GetUserByUUID(userUUID)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
+
+	requestID, itemCount, err := h.repo.CostRequest.GetDraftRequestInfo(user.ID)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get cost request info"})
@@ -78,6 +103,19 @@ func (h *CostRequestHandler) GetCostRequestInfo(ctx *gin.Context) {
 }
 
 func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
+	userUUID, _, ok := GetUserFromContext(ctx)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	user, err := h.repo.User.GetUserByUUID(userUUID)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
+
 	var statusFilter uint8
 	if statusStr := ctx.Query("status"); statusStr != "" {
 		if status, err := strconv.ParseUint(statusStr, 10, 8); err == nil {
@@ -97,7 +135,7 @@ func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
 		}
 	}
 
-	requests, err := h.repo.CostRequest.GetCostRequests(statusFilter, dateFrom, dateTo)
+	requests, err := h.repo.CostRequest.GetCostRequests(user.ID, statusFilter, dateFrom, dateTo)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get cost requests"})
@@ -122,6 +160,17 @@ func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// @Summary      Get cost request by ID
+// @Description  Get detailed information about a specific cost request
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Cost Request ID"
+// @Security     BearerAuth
+// @Success      200  {object}  CostRequestDetailResponse
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      404  {object}  map[string]interface{}
+// @Router       /cost-requests/{id} [get]
 func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -130,18 +179,26 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 		return
 	}
 
-	userID := GetFixedUserID()
-	request, err := h.repo.CostRequest.GetCostRequestByID(id, userID)
+	userUUID, _, ok := GetUserFromContext(ctx)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	user, err := h.repo.User.GetUserByUUID(userUUID)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
+
+	request, err := h.repo.CostRequest.GetCostRequestByID(id, user.ID)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cost request not found"})
 		return
 	}
 
-	// var calculatedRatio float64
-	// calculatedRatio = r.CalculateRatio(request.ID)
-
-	// Transform to response with only required fields
 	response := CostRequestDetailResponse{
 		ID:         request.ID,
 		CreatedAt:  request.CreatedAt,
@@ -150,7 +207,6 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 		// Ratio: calculatedRatio,
 	}
 
-	// Transform CostRequestToCost items
 	for _, priceToRequest := range request.Price_request_for_cost {
 		costDetail := PriceRequestToCostDetailResponse{
 			CostTitle:  priceToRequest.Cost.Title,
@@ -163,6 +219,18 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// @Summary      Update cost request
+// @Description  Update an existing cost request
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Cost Request ID"
+// @Param        request body UpdateCostRequestResponse true "Cost request update data"
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /cost-requests/{id} [put]
 func (h *CostRequestHandler) UpdateCostRequest(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -186,6 +254,16 @@ func (h *CostRequestHandler) UpdateCostRequest(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Cost request updated successfully"})
 }
 
+// @Summary      Form cost request
+// @Description  Form a draft cost request into a submitted request
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Cost Request ID"
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Router       /cost-requests/{id}/form [put]
 func (h *CostRequestHandler) FormCostRequest(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -194,8 +272,20 @@ func (h *CostRequestHandler) FormCostRequest(ctx *gin.Context) {
 		return
 	}
 
-	userID := GetFixedUserID()
-	if err := h.repo.CostRequest.FormRequest(id, userID); err != nil {
+	userUUID, _, ok := GetUserFromContext(ctx)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	user, err := h.repo.User.GetUserByUUID(userUUID)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
+
+	if err := h.repo.CostRequest.FormRequest(id, user.ID); err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -204,6 +294,16 @@ func (h *CostRequestHandler) FormCostRequest(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Cost request formed successfully"})
 }
 
+// @Summary      Resolve cost request
+// @Description  Resolve a cost request (moderator action)
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Cost Request ID"
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Router       /cost-requests/{id}/resolve [put]
 func (h *CostRequestHandler) ResolveCostRequest(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -212,12 +312,28 @@ func (h *CostRequestHandler) ResolveCostRequest(ctx *gin.Context) {
 		return
 	}
 
-	// ratioCalculationResult := h.repo.CostRequest.CalculateRatio(id)
+	userUUID, scopes, ok := GetUserFromContext(ctx)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	hasScope := slices.Contains(scopes, "resolve:requests")
+	if !hasScope {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions. Moderator role required"})
+		return
+	}
+
+	user, err := h.repo.User.GetUserByUUID(userUUID)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
 
 	deliveryDate := time.Now().AddDate(0, 1, 0)
 
-	moderatorID := uint64(2)
-	calculatedRatio, err := h.repo.CostRequest.ResolveOrRejectRequest(id, moderatorID, 4)
+	calculatedRatio, err := h.repo.CostRequest.ResolveOrRejectRequest(id, user.ID, 4)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -234,6 +350,16 @@ func (h *CostRequestHandler) ResolveCostRequest(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// @Summary      Reject cost request
+// @Description  Reject a cost request (moderator action)
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Cost Request ID"
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Router       /cost-requests/{id}/reject [put]
 func (h *CostRequestHandler) RejectCostRequest(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -241,8 +367,33 @@ func (h *CostRequestHandler) RejectCostRequest(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid cost request ID"})
 		return
 	}
-	moderatorID := uint64(2)
-	_, err = h.repo.CostRequest.ResolveOrRejectRequest(id, moderatorID, 5)
+
+	userUUID, scopes, ok := GetUserFromContext(ctx)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	hasScope := false
+	for _, scope := range scopes {
+		if scope == "reject:requests" {
+			hasScope = true
+			break
+		}
+	}
+	if !hasScope {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions. Moderator role required"})
+		return
+	}
+
+	user, err := h.repo.User.GetUserByUUID(userUUID)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
+
+	_, err = h.repo.CostRequest.ResolveOrRejectRequest(id, user.ID, 5)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -252,6 +403,17 @@ func (h *CostRequestHandler) RejectCostRequest(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Cost request rejected successfully"})
 }
 
+// @Summary      Delete cost request
+// @Description  Delete a cost request
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Cost Request ID"
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /cost-requests/{id} [delete]
 func (h *CostRequestHandler) DeleteCostRequest(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -260,8 +422,20 @@ func (h *CostRequestHandler) DeleteCostRequest(ctx *gin.Context) {
 		return
 	}
 
-	userID := GetFixedUserID()
-	if err := h.repo.CostRequest.DeleteRequest(id, userID); err != nil {
+	userUUID, _, ok := GetUserFromContext(ctx)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	user, err := h.repo.User.GetUserByUUID(userUUID)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		return
+	}
+
+	if err := h.repo.CostRequest.DeleteRequest(id, user.ID); err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete cost request"})
 		return

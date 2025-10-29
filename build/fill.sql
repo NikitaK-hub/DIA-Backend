@@ -8,8 +8,8 @@ VALUES
 ('Транспортные расходы', 'http://localhost:9000/costs/transport.png', 'Транспортные расходы относятся к переменной издержкой и зависит от объема производства. При расчете данных издержек стоит учитывать: стоимость топлива, плата за километраж или тонно-километры при использовании сторонних перевозчиков, разовые затраты на доставку товара.', false);
 
 
-INSERT INTO users (username, password, is_mod) 
-VALUES ('test_user','test_password', false);
+INSERT INTO users (username, password) 
+VALUES ('test_user','test_password');
 
 
 INSERT INTO cost_requests (ID_user, ID_moderator, min_volume, max_volume) 

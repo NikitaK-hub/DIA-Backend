@@ -8,47 +8,52 @@ import (
 
 func RegisterHandlers(router *gin.Engine, repo *repository.Repository) {
 	apiRouter := router.Group("/api")
+	userHandler := NewUserHandler(repo)
+
+	publicRouter := apiRouter.Group("")
+	{
+		publicRouter.POST("/users/register", userHandler.Register)
+		publicRouter.POST("/users/login", userHandler.Login)
+		publicRouter.POST("/users/refresh", userHandler.RefreshToken)
+	}
+
+	protectedRouter := apiRouter.Group("")
+	protectedRouter.Use(userHandler.AuthMiddleware())
+	{
+		protectedRouter.GET("/users/profile", userHandler.GetProfile)
+		protectedRouter.PUT("/users/profile", userHandler.UpdateProfile)
+		protectedRouter.POST("/users/logout", userHandler.Logout)
+	}
 
 	costHandler := NewCostHandler(repo)
-	costRouter := apiRouter.Group("/costs")
-
+	costRouter := protectedRouter.Group("/costs")
 	{
 		costRouter.GET("", costHandler.GetCosts)
 		costRouter.GET("/:id", costHandler.GetCostByID)
-		costRouter.POST("", costHandler.CreateCost)
-		costRouter.PUT("/:id", costHandler.UpdateCost)
-		costRouter.DELETE("/:id", costHandler.DeleteCost)
-		costRouter.POST("/:id/image", costHandler.AddCostImage)
-		costRouter.POST("/:id/add-to-request", costHandler.AddCostToDraftRequest)
+		costRouter.POST("", userHandler.ScopeMiddleware("create:costs"), costHandler.CreateCost)
+		costRouter.PUT("/:id", userHandler.ScopeMiddleware("update:costs"), costHandler.UpdateCost)
+		costRouter.DELETE("/:id", userHandler.ScopeMiddleware("delete:costs"), costHandler.DeleteCost)
+		costRouter.POST("/:id/image", userHandler.ScopeMiddleware("update:costs"), costHandler.AddCostImage)
+		costRouter.POST("/:id/add-to-request", userHandler.ScopeMiddleware("create:requests"), costHandler.AddCostToDraftRequest)
 	}
 
 	requestHandler := NewCostRequestHandler(repo)
-	requestRouter := apiRouter.Group("/cost-requests")
+	requestRouter := protectedRouter.Group("/cost-requests")
 	{
 		requestRouter.GET("/costRequestInfo", requestHandler.GetCostRequestInfo)
 		requestRouter.GET("", requestHandler.GetCostRequests)
 		requestRouter.GET("/:id", requestHandler.GetCostRequestByID)
-		requestRouter.PUT("/:id", requestHandler.UpdateCostRequest)
-		requestRouter.PUT("/:id/form", requestHandler.FormCostRequest)
-		requestRouter.PUT("/:id/resolve", requestHandler.ResolveCostRequest)
-		requestRouter.PUT("/:id/reject", requestHandler.RejectCostRequest)
-		requestRouter.DELETE("/:id", requestHandler.DeleteCostRequest)
+		requestRouter.PUT("/:id", userHandler.ScopeMiddleware("update:requests"), requestHandler.UpdateCostRequest)
+		requestRouter.PUT("/:id/form", userHandler.ScopeMiddleware("update:requests"), requestHandler.FormCostRequest)
+		requestRouter.PUT("/:id/resolve", userHandler.ScopeMiddleware("resolve:requests"), requestHandler.ResolveCostRequest)
+		requestRouter.PUT("/:id/reject", userHandler.ScopeMiddleware("reject:requests"), requestHandler.RejectCostRequest)
+		requestRouter.DELETE("/:id", userHandler.ScopeMiddleware("update:requests"), requestHandler.DeleteCostRequest)
 	}
 
 	requestCostHandler := NewPriceRequestToCostHandler(repo)
-	requestCostRouter := apiRouter.Group("/price-request-costs")
+	requestCostRouter := protectedRouter.Group("/price-request-costs")
 	{
-		requestCostRouter.DELETE("/:requestId/costs/:costId", requestCostHandler.RemovePriceToRequestConnection)
-		requestCostRouter.PUT("/:requestId/costs/:costId", requestCostHandler.UpdatePriceToRequestConnection)
-	}
-
-	userHandler := NewUserHandler(repo)
-	userRouter := apiRouter.Group("/users")
-	{
-		userRouter.POST("/register", userHandler.Register)
-		userRouter.GET("/profile", userHandler.GetProfile)
-		userRouter.PUT("/profile", userHandler.UpdateProfile)
-		userRouter.POST("/login", userHandler.Login)
-		userRouter.POST("/logout", userHandler.Logout)
+		requestCostRouter.DELETE("/:requestId/costs/:costId", userHandler.ScopeMiddleware("update:requests"), requestCostHandler.RemovePriceToRequestConnection)
+		requestCostRouter.PUT("/:requestId/costs/:costId", userHandler.ScopeMiddleware("update:requests"), requestCostHandler.UpdatePriceToRequestConnection)
 	}
 }

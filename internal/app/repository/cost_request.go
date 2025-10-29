@@ -7,6 +7,8 @@ import (
 
 	"DIA_Backend/internal/app/ds"
 	"errors"
+
+	"github.com/sirupsen/logrus"
 )
 
 type CostRequestRepository struct {
@@ -42,7 +44,7 @@ func (r *CostRequestRepository) GetDraftRequestInfo(userID uint64) (uint64, int,
 	return request.ID, int(count), nil
 }
 
-func (r *CostRequestRepository) GetCostRequests(statusFilter uint8, dateFrom, dateTo *time.Time) ([]ds.Cost_request, error) {
+func (r *CostRequestRepository) GetCostRequests(userID uint64, statusFilter uint8, dateFrom, dateTo *time.Time) ([]ds.Cost_request, error) {
 	var requests []ds.Cost_request
 
 	query := r.db.
@@ -52,7 +54,7 @@ func (r *CostRequestRepository) GetCostRequests(statusFilter uint8, dateFrom, da
 		Preload("Moderator", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username")
 		}).
-		Where("status != 1 AND status != 2") // исключаем черновики и удалённые
+		Where("user_id = ? AND status != 2", userID)
 
 	if statusFilter != 0 {
 		query = query.Where("status = ?", statusFilter)
@@ -127,10 +129,11 @@ func (r *CostRequestRepository) ResolveOrRejectRequest(id uint64, moderatorID ui
 		if err != nil {
 			return err
 		}
+		logrus.Info(request.ID)
 
 		calculatedRatio = r.CalculateRatio(request.ID)
 
-		updates := map[string]interface{}{
+		updates := map[string]any{
 			"status":       status,
 			"id_moderator": moderatorID,
 			"closed_at":    time.Now(),
@@ -176,7 +179,7 @@ func (r *CostRequestRepository) UpdateRequestToCost(requestID uint64, costID uin
 			return err
 		}
 
-		updates := make(map[string]interface{})
+		updates := make(map[string]any)
 		if cost_price != nil {
 			updates["cost_price"] = *cost_price
 		}
@@ -193,7 +196,7 @@ func (r *CostRequestRepository) UpdateRequestToCost(requestID uint64, costID uin
 }
 
 func (r *CostRequestRepository) UpdateCostRequest(id uint64, Min_volume *uint64, Max_volume *uint64) error {
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 
 	if Min_volume != nil {
 		updates["Min_volume"] = *Min_volume
