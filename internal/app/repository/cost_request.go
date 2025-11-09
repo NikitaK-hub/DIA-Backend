@@ -54,7 +54,7 @@ func (r *CostRequestRepository) GetCostRequests(userID uint64, statusFilter uint
 		Preload("Moderator", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username")
 		}).
-		Where("user_id = ? AND status != 2", userID)
+		Where("id_user = ? AND status != 2", userID)
 
 	if statusFilter != 0 {
 		query = query.Where("status = ?", statusFilter)

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -75,6 +76,45 @@ func CloseDBConn(r *Repository) {
 
 func (r *Repository) GetRedisClient() *redis.Client {
 	return r.redis
+}
+
+func InitRedisClient() (*redis.Client, error) {
+	host := os.Getenv("REDIS_HOST")
+	portStr := os.Getenv("REDIS_PORT")
+	password := os.Getenv("REDIS_PASSWORD")
+	user := os.Getenv("REDIS_USER")
+
+	if host == "" {
+		host = "localhost"
+	}
+
+	port := 6379
+	if portStr != "" {
+		var err error
+		port, err = strconv.Atoi(portStr)
+		if err != nil {
+			return nil, fmt.Errorf("redis port must be int value: %v", err)
+		}
+	}
+
+	cfg := &redis.Config{
+		Host:        host,
+		Port:        port,
+		Password:    password,
+		User:        user,
+		DialTimeout: 10 * time.Second,
+		ReadTimeout: 30 * time.Second,
+	}
+
+	client := redis.New(cfg)
+
+	// Test connection
+	ctx := context.Background()
+	if err := client.Ping(ctx); err != nil {
+		return nil, fmt.Errorf("failed to connect to Redis: %v", err)
+	}
+
+	return client, nil
 }
 
 func InitMinioClient() (*minio.Client, error) {
