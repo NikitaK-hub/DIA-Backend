@@ -46,14 +46,14 @@ type CostResponse struct {
 }
 
 // @Description  Get a list of all cost with optional title search
-// @Tags         cost
+// @Tags         costs
 // @Accept       json
 // @Produce      json
 // @Param        title query string false "Search cost by title"
 // @Security     BearerAuth
 // @Success      200  {array}   CostsFilterResponse
 // @Failure      500  {object}  map[string]interface{}
-// @Router       /cost [get]
+// @Router       /costs [get]
 func (h *CostHandler) GetCosts(ctx *gin.Context) {
 	searchQuery := ctx.Query("title")
 
