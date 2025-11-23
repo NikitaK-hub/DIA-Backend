@@ -15,6 +15,14 @@ func RegisterHandlers(router *gin.Engine, repo *repository.Repository) {
 		publicRouter.POST("/users/register", userHandler.Register)
 		publicRouter.POST("/users/login", userHandler.Login)
 		publicRouter.POST("/users/refresh", userHandler.RefreshToken)
+
+		// Public costs routes
+		costHandler := NewCostHandler(repo)
+		publicRouter.GET("/costs", costHandler.GetCosts)
+		publicRouter.GET("/costs/:id", costHandler.GetCostByID)
+
+		requestHandler := NewCostRequestHandler(repo)
+		publicRouter.GET("/cost-requests/costRequestInfo", requestHandler.GetCostRequestInfo)
 	}
 
 	protectedRouter := apiRouter.Group("")
@@ -23,24 +31,23 @@ func RegisterHandlers(router *gin.Engine, repo *repository.Repository) {
 		protectedRouter.GET("/users/profile", userHandler.GetProfile)
 		protectedRouter.PUT("/users/profile", userHandler.UpdateProfile)
 		protectedRouter.POST("/users/logout", userHandler.Logout)
-	}
 
-	costHandler := NewCostHandler(repo)
-	costRouter := protectedRouter.Group("/costs")
-	{
-		costRouter.GET("", costHandler.GetCosts)
-		costRouter.GET("/:id", costHandler.GetCostByID)
-		costRouter.POST("", userHandler.ScopeMiddleware("create:costs"), costHandler.CreateCost)
-		costRouter.PUT("/:id", userHandler.ScopeMiddleware("update:costs"), costHandler.UpdateCost)
-		costRouter.DELETE("/:id", userHandler.ScopeMiddleware("delete:costs"), costHandler.DeleteCost)
-		costRouter.POST("/:id/image", userHandler.ScopeMiddleware("update:costs"), costHandler.AddCostImage)
-		costRouter.POST("/:id/add-to-request", userHandler.ScopeMiddleware("create:requests"), costHandler.AddCostToDraftRequest)
+		// Cost routes with role-based permissions
+		costHandler := NewCostHandler(repo)
+		costRouter := protectedRouter.Group("/costs")
+		{
+
+			costRouter.POST("", userHandler.ScopeMiddleware("create:costs"), costHandler.CreateCost)
+			costRouter.PUT("/:id", userHandler.ScopeMiddleware("update:costs"), costHandler.UpdateCost)
+			costRouter.DELETE("/:id", userHandler.ScopeMiddleware("delete:costs"), costHandler.DeleteCost)
+			costRouter.POST("/:id/image", userHandler.ScopeMiddleware("update:costs"), costHandler.AddCostImage)
+			costRouter.POST("/:id/add-to-request", userHandler.ScopeMiddleware("create:requests"), costHandler.AddCostToDraftRequest)
+		}
 	}
 
 	requestHandler := NewCostRequestHandler(repo)
 	requestRouter := protectedRouter.Group("/cost-requests")
 	{
-		requestRouter.GET("/costRequestInfo", requestHandler.GetCostRequestInfo)
 		requestRouter.GET("", requestHandler.GetCostRequests)
 		requestRouter.GET("/:id", requestHandler.GetCostRequestByID)
 		requestRouter.PUT("/:id", userHandler.ScopeMiddleware("update:requests"), requestHandler.UpdateCostRequest)
