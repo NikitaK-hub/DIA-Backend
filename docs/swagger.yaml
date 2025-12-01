@@ -1,0 +1,934 @@
+basePath: /api
+definitions:
+  handler.CostRequestDetailResponse:
+    properties:
+      Max_volume:
+        type: integer
+      Min_volume:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      price_request_to_costs:
+        description: 'Ratio               float64                            `json:
+          "Ratio"`'
+        items:
+          $ref: '#/definitions/handler.PriceRequestToCostDetailResponse'
+        type: array
+    type: object
+  handler.CostResponse:
+    properties:
+      id:
+        type: integer
+      image_url:
+        type: string
+      info:
+        type: string
+      title:
+        type: string
+      type_change:
+        type: boolean
+    type: object
+  handler.CostsFilterResponse:
+    properties:
+      id:
+        type: integer
+      image_url:
+        type: string
+      info:
+        type: string
+      title:
+        type: string
+    type: object
+  handler.CostsRequestsFilterResponse:
+    properties:
+      ClosedAt:
+        type: string
+      CreatedAt:
+        type: string
+      FormedAt:
+        type: string
+      Max_volume:
+        type: integer
+      Min_volume:
+        type: integer
+      ModeratorID:
+        type: integer
+      Status:
+        type: integer
+      UserID:
+        type: integer
+      id:
+        type: integer
+    type: object
+  handler.CreateCostRequest:
+    properties:
+      info:
+        type: string
+      title:
+        type: string
+      type_change:
+        type: boolean
+    required:
+    - title
+    - type_change
+    type: object
+  handler.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  handler.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/handler.UserInfo'
+    type: object
+  handler.PriceRequestToCostDetailResponse:
+    properties:
+      cost_price:
+        type: number
+      cost_title:
+        type: string
+      img:
+        type: string
+    type: object
+  handler.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handler.RegisterRequest:
+    properties:
+      password:
+        type: string
+      role:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  handler.UpdateCostRequest:
+    properties:
+      info:
+        type: string
+      title:
+        type: string
+      type_change:
+        type: boolean
+    type: object
+  handler.UpdateCostRequestResponse:
+    properties:
+      Max_volume:
+        type: integer
+      Min_volume:
+        type: integer
+    type: object
+  handler.UpdatePriceToRequestConnection:
+    properties:
+      cost_price:
+        type: number
+    type: object
+  handler.UpdateProfileRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  handler.UserInfo:
+    properties:
+      id:
+        type: integer
+      role:
+        type: string
+      username:
+        type: string
+    type: object
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:8080
+info:
+  contact:
+    email: support@DIA.example.com
+    name: API Support
+    url: https://github.com/your-org/DIA_Backend
+  description: This is the backend API for DIA (Information and Analytical Data) system.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: DIA Backend API
+  version: "1.0"
+paths:
+  /cost-request-costs/{requestId}/costs/{costId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a cost from a cost request
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: requestId
+        required: true
+        type: integer
+      - description: Cost ID
+        in: path
+        name: costId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove cost from request
+      tags:
+      - cost-request-costs
+    put:
+      consumes:
+      - application/json
+      description: Update cost connection details in a cost request
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: requestId
+        required: true
+        type: integer
+      - description: Cost ID
+        in: path
+        name: costId
+        required: true
+        type: integer
+      - description: Cost connection update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdatePriceToRequestConnection'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update cost in request
+      tags:
+      - cost-request-costs
+  /cost-requests:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of cost requests with optional filtering
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: integer
+      - description: Filter by date from (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: Filter by date to (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.CostsRequestsFilterResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get cost requests
+      tags:
+      - cost-requests
+  /cost-requests/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a cost request
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete cost request
+      tags:
+      - cost-requests
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific cost request
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CostRequestDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get cost request by ID
+      tags:
+      - cost-requests
+    put:
+      consumes:
+      - application/json
+      description: Update an existing cost request
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Cost request update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateCostRequestResponse'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update cost request
+      tags:
+      - cost-requests
+  /cost-requests/{id}/form:
+    put:
+      consumes:
+      - application/json
+      description: Form a draft cost request into a submitted request
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Form cost request
+      tags:
+      - cost-requests
+  /cost-requests/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      description: Reject a cost request (moderator action)
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reject cost request
+      tags:
+      - cost-requests
+  /cost-requests/{id}/resolve:
+    put:
+      consumes:
+      - application/json
+      description: Resolve a cost request (moderator action)
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Resolve cost request
+      tags:
+      - cost-requests
+  /costs:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all cost with optional title search
+      parameters:
+      - description: Search cost by title
+        in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.CostsFilterResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      tags:
+      - costs
+    post:
+      consumes:
+      - application/json
+      description: Create a new cost with the provided data
+      parameters:
+      - description: Cost creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateCostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new cost
+      tags:
+      - costs
+  /costs/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a cost by ID
+      parameters:
+      - description: Cost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete cost
+      tags:
+      - costs
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific cost
+      parameters:
+      - description: Cost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CostResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get cost by ID
+      tags:
+      - costs
+    put:
+      consumes:
+      - application/json
+      description: Update an existing cost with new data
+      parameters:
+      - description: Cost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Cost update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateCostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update cost
+      tags:
+      - costs
+  /costs/{id}/add-to-request:
+    post:
+      consumes:
+      - application/json
+      description: Add a cost to the current user's draft request
+      parameters:
+      - description: Cost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add cost to draft request
+      tags:
+      - costs
+  /costs/{id}/image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload and attach an image to a cost
+      parameters:
+      - description: Cost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Cost image file
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add image to cost
+      tags:
+      - costs
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT tokens
+      parameters:
+      - description: User credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User login
+      tags:
+      - users
+  /users/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout user (token invalidation)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: User logout
+      tags:
+      - users
+  /users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update current user's profile information
+      parameters:
+      - description: Profile update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - users
+  /users/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get new access token using refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh access token
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

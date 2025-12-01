@@ -71,15 +71,16 @@ type UpdateCostRequestResponse struct {
 // @Param        status query int false "Filter by status"
 // @Param        date_from query string false "Filter by date from (YYYY-MM-DD)"
 // @Param        date_to query string false "Filter by date to (YYYY-MM-DD)"
-// @Security     BearerAuth
 // @Success      200  {array}   CostsRequestsFilterResponse
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /cost-requests [get]
 func (h *CostRequestHandler) GetCostRequestInfo(ctx *gin.Context) {
 	userUUID, _, ok := GetUserFromContext(ctx)
 	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
+		ctx.JSON(http.StatusOK, CostRequestInfoResponse{
+			RequestID: 0,
+			ItemCount: -1,
+		})
 	}
 
 	user, err := h.repo.User.GetUserByUUID(userUUID)
