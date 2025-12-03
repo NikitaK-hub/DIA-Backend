@@ -1,13 +1,16 @@
 package handler
 
 import (
+	"DIA_Backend/internal/app/ds"
 	"DIA_Backend/internal/app/repository"
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,6 +50,7 @@ type PriceRequestToCostDetailResponse struct {
 	Cost_price float64 `json:"cost_price"`
 	CostTitle  string  `json:"cost_title"`
 	CostImg    string  `json:"img"`
+	CostID     uint64  `json:"cost_id"`
 }
 
 func NewCostRequestHandler(repository *repository.Repository) *CostRequestHandler {
@@ -63,20 +67,35 @@ type UpdateCostRequestResponse struct {
 	Max_volume *uint64 `json:"Max_volume"`
 }
 
-// @Summary      Get cost requests
-// @Description  Get a list of cost requests with optional filtering
+// @Summary      Get draft request info
+// @Description  Get information about current user's draft request
 // @Tags         cost-requests
 // @Accept       json
 // @Produce      json
-// @Param        status query int false "Filter by status"
-// @Param        date_from query string false "Filter by date from (YYYY-MM-DD)"
-// @Param        date_to query string false "Filter by date to (YYYY-MM-DD)"
-// @Success      200  {array}   CostsRequestsFilterResponse
+// @Security     BearerAuth
+// @Success      200  {object}  CostRequestInfoResponse
 // @Failure      500  {object}  map[string]interface{}
-// @Router       /cost-requests [get]
+// @Router       /cost-requests/costRequestInfo [get]
 func (h *CostRequestHandler) GetCostRequestInfo(ctx *gin.Context) {
-	userUUID, _, ok := GetUserFromContext(ctx)
-	if !ok {
+	jwtStr := ctx.GetHeader("Authorization")
+	const jwtPrefix = "Bearer "
+
+	var userUUID = "Bearer "
+
+	if strings.HasPrefix(jwtStr, jwtPrefix) {
+		jwtStr = jwtStr[len(jwtPrefix):]
+
+		claims := &ds.JWTClaims{}
+		token, err := jwt.ParseWithClaims(jwtStr, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte(h.repo.GetJWTSecret()), nil
+		})
+
+		if err == nil && token.Valid && !claims.IsRefresh {
+			userUUID = claims.UserUUID.String()
+		}
+	}
+
+	if userUUID == "" {
 		ctx.JSON(http.StatusOK, CostRequestInfoResponse{
 			RequestID: 0,
 			ItemCount: -1,
@@ -103,6 +122,17 @@ func (h *CostRequestHandler) GetCostRequestInfo(ctx *gin.Context) {
 	})
 }
 
+// @Summary      Get cost requests
+// @Description  Get a list of cost requests with optional filtering
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        status query int false "Filter by status"
+// @Param        date_from query string false "Filter by date from (YYYY-MM-DD)"
+// @Param        date_to query string false "Filter by date to (YYYY-MM-DD)"
+// @Success      200  {array}   CostsRequestsFilterResponse
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /cost-requests [get]
 func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
 	userUUID, _, ok := GetUserFromContext(ctx)
 	if !ok {
@@ -213,6 +243,7 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 			CostTitle:  priceToRequest.Cost.Title,
 			Cost_price: priceToRequest.Cost_price,
 			CostImg:    priceToRequest.Cost.Img,
+			CostID:     priceToRequest.Cost.ID,
 		}
 		response.PriceRequestToCosts = append(response.PriceRequestToCosts, costDetail)
 	}
@@ -375,13 +406,7 @@ func (h *CostRequestHandler) RejectCostRequest(ctx *gin.Context) {
 		return
 	}
 
-	hasScope := false
-	for _, scope := range scopes {
-		if scope == "reject:requests" {
-			hasScope = true
-			break
-		}
-	}
+	hasScope := slices.Contains(scopes, "reject:requests")
 	if !hasScope {
 		ctx.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions. Moderator role required"})
 		return

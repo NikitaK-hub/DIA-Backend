@@ -17,6 +17,13 @@ definitions:
           $ref: '#/definitions/handler.PriceRequestToCostDetailResponse'
         type: array
     type: object
+  handler.CostRequestInfoResponse:
+    properties:
+      item_count:
+        type: integer
+      request_id:
+        type: integer
+    type: object
   handler.CostResponse:
     properties:
       id:
@@ -99,6 +106,8 @@ definitions:
     type: object
   handler.PriceRequestToCostDetailResponse:
     properties:
+      cost_id:
+        type: integer
       cost_price:
         type: number
       cost_title:
@@ -486,6 +495,28 @@ paths:
       security:
       - BearerAuth: []
       summary: Resolve cost request
+      tags:
+      - cost-requests
+  /cost-requests/costRequestInfo:
+    get:
+      consumes:
+      - application/json
+      description: Get information about current user's draft request
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CostRequestInfoResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get draft request info
       tags:
       - cost-requests
   /costs:
@@ -896,7 +927,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new user account
+      description: Create a new user account and automatically login
       parameters:
       - description: User registration data
         in: body
@@ -910,8 +941,7 @@ paths:
         "201":
           description: Created
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handler.LoginResponse'
         "400":
           description: Bad Request
           schema:

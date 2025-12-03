@@ -1,7 +1,6 @@
 package api
 
 import (
-	_ "DIA_Backend/docs"
 	"DIA_Backend/internal/app/handler"
 	"DIA_Backend/internal/app/repository"
 	"os"

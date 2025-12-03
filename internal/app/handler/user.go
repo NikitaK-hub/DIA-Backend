@@ -72,12 +72,12 @@ type LogoutRequest struct {
 }
 
 // @Summary      Register a new user
-// @Description  Create a new user account
+// @Description  Create a new user account and automatically login
 // @Tags         users
 // @Accept       json
 // @Produce      json
 // @Param        request body RegisterRequest true "User registration data"
-// @Success      201  {object}  map[string]interface{}
+// @Success      201  {object}  LoginResponse
 // @Failure      400  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /users/register [post]
@@ -105,10 +105,28 @@ func (h *UserHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "User registered successfully",
-		"id_user": user.ID,
-	})
+	// After successful registration, generate tokens for automatic login
+	jwtConfig := h.repo.GetJWTConfig()
+	accessToken, refreshToken, err := h.generateTokens(user, jwtConfig)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
+		return
+	}
+
+	response := LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int64(jwtConfig.ExpiresIn.Seconds()),
+		User: UserInfo{
+			ID:       user.ID,
+			Username: user.Username,
+			Role:     user.Role.String(),
+		},
+	}
+
+	ctx.JSON(http.StatusCreated, response)
 }
 
 // @Summary      User login

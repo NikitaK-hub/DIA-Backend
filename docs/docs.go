@@ -201,6 +201,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/cost-requests/costRequestInfo": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get information about current user's draft request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cost-requests"
+                ],
+                "summary": "Get draft request info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.CostRequestInfoResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/cost-requests/{id}": {
             "get": {
                 "security": [
@@ -1114,7 +1149,7 @@ const docTemplate = `{
         },
         "/users/register": {
             "post": {
-                "description": "Create a new user account",
+                "description": "Create a new user account and automatically login",
                 "consumes": [
                     "application/json"
                 ],
@@ -1140,8 +1175,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handler.LoginResponse"
                         }
                     },
                     "400": {
@@ -1184,6 +1218,17 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/handler.PriceRequestToCostDetailResponse"
                     }
+                }
+            }
+        },
+        "handler.CostRequestInfoResponse": {
+            "type": "object",
+            "properties": {
+                "item_count": {
+                    "type": "integer"
+                },
+                "request_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -1312,6 +1357,9 @@ const docTemplate = `{
         "handler.PriceRequestToCostDetailResponse": {
             "type": "object",
             "properties": {
+                "cost_id": {
+                    "type": "integer"
+                },
                 "cost_price": {
                     "type": "number"
                 },
