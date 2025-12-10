@@ -82,12 +82,12 @@ func (r *CostRequestRepository) GetCostRequests(userID uint64, isModerator bool,
 func (r *CostRequestRepository) GetCostRequestByID(id uint64, ID_user uint64, isModerator bool) (*ds.Cost_request, error) {
 	var request ds.Cost_request
 	query := r.db.
-		Preload("PriceRequestToStage").
-		Preload("PriceRequestToStage.Stage").
+		Preload("Price_request_for_cost").
+		Preload("Price_request_for_cost.Cost").
 		Where("status != 2")
 
 	if !isModerator {
-		query = query.Where("user_id = ?", ID_user)
+		query = query.Where("id_user = ?", ID_user)
 	}
 
 	err := query.First(&request, id).Error
