@@ -28,7 +28,7 @@ type CostsRequestsFilterResponse struct {
 	CreatedAt    time.Time `json:"CreatedAt"`
 	FormedAt     time.Time `json:"FormedAt"`
 	ClosedAt     time.Time `json:"ClosedAt"`
-	Ratio        float64   `json: "Ratio"`
+	Ratio        float64   `json:"Ratio"`
 }
 
 type CostRequestResponse struct {
@@ -36,7 +36,7 @@ type CostRequestResponse struct {
 	PriceRequestToCost []PriceRequestToCostResponse `json:"PriceRequestToCost"`
 	Min_volume         uint64                       `json:"Min_volume"`
 	Max_volume         uint64                       `json:"Max_volume"`
-	Cost_price         uint64                       `json: "Cost_price"`
+	Cost_price         uint64                       `json:"Cost_price"`
 }
 
 type CostRequestDetailResponse struct {
@@ -44,7 +44,7 @@ type CostRequestDetailResponse struct {
 	CreatedAt           time.Time                          `json:"created_at"`
 	Min_volume          uint64                             `json:"Min_volume"`
 	Max_volume          uint64                             `json:"Max_volume"`
-	Ratio               float64                            `json: "Ratio"`
+	Ratio               float64                            `json:"Ratio"`
 	PriceRequestToCosts []PriceRequestToCostDetailResponse `json:"price_request_to_costs"`
 	Status              uint8                              `json:"status"`
 }
