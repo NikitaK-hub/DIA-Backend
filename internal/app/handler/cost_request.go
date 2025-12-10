@@ -28,6 +28,7 @@ type CostsRequestsFilterResponse struct {
 	CreatedAt    time.Time `json:"CreatedAt"`
 	FormedAt     time.Time `json:"FormedAt"`
 	ClosedAt     time.Time `json:"ClosedAt"`
+	Ratio        float64   `json: "Ratio"`
 }
 
 type CostRequestResponse struct {
@@ -35,15 +36,17 @@ type CostRequestResponse struct {
 	PriceRequestToCost []PriceRequestToCostResponse `json:"PriceRequestToCost"`
 	Min_volume         uint64                       `json:"Min_volume"`
 	Max_volume         uint64                       `json:"Max_volume"`
+	Cost_price         uint64                       `json: "Cost_price"`
 }
 
 type CostRequestDetailResponse struct {
-	ID         uint64    `json:"id"`
-	CreatedAt  time.Time `json:"created_at"`
-	Min_volume uint64    `json:"Min_volume"`
-	Max_volume uint64    `json:"Max_volume"`
-	// Ratio               float64                            `json: "Ratio"`
+	ID                  uint64                             `json:"id"`
+	CreatedAt           time.Time                          `json:"created_at"`
+	Min_volume          uint64                             `json:"Min_volume"`
+	Max_volume          uint64                             `json:"Max_volume"`
+	Ratio               float64                            `json: "Ratio"`
 	PriceRequestToCosts []PriceRequestToCostDetailResponse `json:"price_request_to_costs"`
+	Status              uint8                              `json:"status"`
 }
 
 type PriceRequestToCostDetailResponse struct {
@@ -134,7 +137,7 @@ func (h *CostRequestHandler) GetCostRequestInfo(ctx *gin.Context) {
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /cost-requests [get]
 func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
-	userUUID, _, ok := GetUserFromContext(ctx)
+	userUUID, scopes, ok := GetUserFromContext(ctx)
 	if !ok {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
@@ -145,6 +148,14 @@ func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
 		logrus.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
 		return
+	}
+
+	isModerator := false
+	for _, scope := range scopes {
+		if scope == "resolve:requests" || scope == "reject:requests" || scope == "manage:users" {
+			isModerator = true
+			break
+		}
 	}
 
 	var statusFilter uint8
@@ -166,7 +177,7 @@ func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
 		}
 	}
 
-	requests, err := h.repo.CostRequest.GetCostRequests(user.ID, statusFilter, dateFrom, dateTo)
+	requests, err := h.repo.CostRequest.GetCostRequests(user.ID, isModerator, statusFilter, dateFrom, dateTo)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get cost requests"})
@@ -210,7 +221,7 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 		return
 	}
 
-	userUUID, _, ok := GetUserFromContext(ctx)
+	userUUID, scopes, ok := GetUserFromContext(ctx)
 	if !ok {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
@@ -223,7 +234,15 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 		return
 	}
 
-	request, err := h.repo.CostRequest.GetCostRequestByID(id, user.ID)
+	isModerator := false
+	for _, scope := range scopes {
+		if scope == "resolve:requests" || scope == "reject:requests" || scope == "manage:users" {
+			isModerator = true
+			break
+		}
+	}
+
+	request, err := h.repo.CostRequest.GetCostRequestByID(id, user.ID, isModerator)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cost request not found"})
@@ -235,7 +254,8 @@ func (h *CostRequestHandler) GetCostRequestByID(ctx *gin.Context) {
 		CreatedAt:  request.CreatedAt,
 		Min_volume: request.Min_volume,
 		Max_volume: request.Max_volume,
-		// Ratio: calculatedRatio,
+		Ratio:      request.Ratio,
+		Status:     request.Status,
 	}
 
 	for _, priceToRequest := range request.Price_request_for_cost {

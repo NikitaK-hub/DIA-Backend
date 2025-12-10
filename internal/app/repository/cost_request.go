@@ -44,7 +44,7 @@ func (r *CostRequestRepository) GetDraftRequestInfo(userID uint64) (uint64, int,
 	return request.ID, int(count), nil
 }
 
-func (r *CostRequestRepository) GetCostRequests(userID uint64, statusFilter uint8, dateFrom, dateTo *time.Time) ([]ds.Cost_request, error) {
+func (r *CostRequestRepository) GetCostRequests(userID uint64, isModerator bool, statusFilter uint8, dateFrom, dateTo *time.Time) ([]ds.Cost_request, error) {
 	var requests []ds.Cost_request
 
 	query := r.db.
@@ -54,7 +54,11 @@ func (r *CostRequestRepository) GetCostRequests(userID uint64, statusFilter uint
 		Preload("Moderator", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username")
 		}).
-		Where("id_user = ? AND status != 2", userID)
+		Where("status > 2").Order("status ASC")
+
+	if !isModerator {
+		query = query.Where("user_id = ?", userID)
+	}
 
 	if statusFilter != 0 {
 		query = query.Where("status = ?", statusFilter)
@@ -75,19 +79,24 @@ func (r *CostRequestRepository) GetCostRequests(userID uint64, statusFilter uint
 	return requests, nil
 }
 
-func (r *CostRequestRepository) GetCostRequestByID(id uint64, ID_user uint64) (*ds.Cost_request, error) {
-	var costRequest ds.Cost_request
-	err := r.db.
-		Preload("Price_request_for_cost").
-		Preload("Price_request_for_cost.Cost").
-		Where("status = 1 and ID_user = ?", ID_user).
-		First(&costRequest, id).Error
+func (r *CostRequestRepository) GetCostRequestByID(id uint64, ID_user uint64, isModerator bool) (*ds.Cost_request, error) {
+	var request ds.Cost_request
+	query := r.db.
+		Preload("PriceRequestToStage").
+		Preload("PriceRequestToStage.Stage").
+		Where("status != 2")
+
+	if !isModerator {
+		query = query.Where("user_id = ?", ID_user)
+	}
+
+	err := query.First(&request, id).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &costRequest, nil
+	return &request, nil
 }
 
 func (r *CostRequestRepository) FormRequest(id uint64, userID uint64) error {

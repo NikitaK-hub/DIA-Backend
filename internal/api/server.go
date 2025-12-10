@@ -5,6 +5,8 @@ import (
 	"DIA_Backend/internal/app/repository"
 	"os"
 
+	_ "DIA_Backend/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"

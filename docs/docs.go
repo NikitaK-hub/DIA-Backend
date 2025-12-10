@@ -1213,11 +1213,16 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "price_request_to_costs": {
-                    "description": "Ratio               float64                            ` + "`" + `json: \"Ratio\"` + "`" + `",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/handler.PriceRequestToCostDetailResponse"
                     }
+                },
+                "ratio": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },
@@ -1298,6 +1303,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "ratio": {
+                    "type": "number"
                 }
             }
         },

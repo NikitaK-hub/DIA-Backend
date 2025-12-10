@@ -15,4 +15,5 @@ type Cost_request struct {
 	CreatedAt              time.Time                `gorm:"not null; default:now()"`
 	FormedAt               time.Time                `gorm:"default:null"`
 	ClosedAt               time.Time                `gorm:"default:null"`
+	Ratio                  float64                  `gorm: "not null"`
 }
