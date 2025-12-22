@@ -150,6 +150,11 @@ const docTemplate = `{
         },
         "/cost-requests": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get a list of cost requests with optional filtering",
                 "consumes": [
                     "application/json"
@@ -1206,6 +1211,9 @@ const docTemplate = `{
                 "Min_volume": {
                     "type": "integer"
                 },
+                "Ratio": {
+                    "type": "number"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1217,9 +1225,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/handler.PriceRequestToCostDetailResponse"
                     }
-                },
-                "ratio": {
-                    "type": "number"
                 },
                 "status": {
                     "type": "integer"
@@ -1295,6 +1300,9 @@ const docTemplate = `{
                 "ModeratorID": {
                     "type": "integer"
                 },
+                "Ratio": {
+                    "type": "number"
+                },
                 "Status": {
                     "type": "integer"
                 },
@@ -1303,9 +1311,6 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
-                },
-                "ratio": {
-                    "type": "number"
                 }
             }
         },

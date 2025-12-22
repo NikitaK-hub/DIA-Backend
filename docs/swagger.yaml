@@ -6,6 +6,8 @@ definitions:
         type: integer
       Min_volume:
         type: integer
+      Ratio:
+        type: number
       created_at:
         type: string
       id:
@@ -14,8 +16,6 @@ definitions:
         items:
           $ref: '#/definitions/handler.PriceRequestToCostDetailResponse'
         type: array
-      ratio:
-        type: number
       status:
         type: integer
     type: object
@@ -64,14 +64,14 @@ definitions:
         type: integer
       ModeratorID:
         type: integer
+      Ratio:
+        type: number
       Status:
         type: integer
       UserID:
         type: integer
       id:
         type: integer
-      ratio:
-        type: number
     type: object
   handler.CreateCostRequest:
     properties:
@@ -306,6 +306,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Get cost requests
       tags:
       - cost-requests

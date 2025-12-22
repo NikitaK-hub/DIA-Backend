@@ -133,6 +133,7 @@ func (h *CostRequestHandler) GetCostRequestInfo(ctx *gin.Context) {
 // @Param        status query int false "Filter by status"
 // @Param        date_from query string false "Filter by date from (YYYY-MM-DD)"
 // @Param        date_to query string false "Filter by date to (YYYY-MM-DD)"
+// @Security     BearerAuth
 // @Success      200  {array}   CostsRequestsFilterResponse
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /cost-requests [get]
@@ -196,6 +197,7 @@ func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
 			ClosedAt:     costRequest.ClosedAt,
 			Min_volume:   costRequest.Min_volume,
 			Max_volume:   costRequest.Max_volume,
+			Ratio:        costRequest.Ratio,
 		})
 	}
 

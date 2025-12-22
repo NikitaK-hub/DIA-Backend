@@ -57,7 +57,7 @@ func (r *CostRequestRepository) GetCostRequests(userID uint64, isModerator bool,
 		Where("status > 2").Order("status ASC")
 
 	if !isModerator {
-		query = query.Where("user_id = ?", userID)
+		query = query.Where("id_user = ?", userID)
 	}
 
 	if statusFilter != 0 {

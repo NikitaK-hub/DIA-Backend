@@ -144,6 +144,11 @@
         },
         "/cost-requests": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get a list of cost requests with optional filtering",
                 "consumes": [
                     "application/json"
@@ -1200,6 +1205,9 @@
                 "Min_volume": {
                     "type": "integer"
                 },
+                "Ratio": {
+                    "type": "number"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1211,9 +1219,6 @@
                     "items": {
                         "$ref": "#/definitions/handler.PriceRequestToCostDetailResponse"
                     }
-                },
-                "ratio": {
-                    "type": "number"
                 },
                 "status": {
                     "type": "integer"
@@ -1289,6 +1294,9 @@
                 "ModeratorID": {
                     "type": "integer"
                 },
+                "Ratio": {
+                    "type": "number"
+                },
                 "Status": {
                     "type": "integer"
                 },
@@ -1297,9 +1305,6 @@
                 },
                 "id": {
                     "type": "integer"
-                },
-                "ratio": {
-                    "type": "number"
                 }
             }
         },
