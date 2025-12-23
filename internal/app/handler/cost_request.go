@@ -29,6 +29,7 @@ type CostsRequestsFilterResponse struct {
 	FormedAt     time.Time `json:"FormedAt"`
 	ClosedAt     time.Time `json:"ClosedAt"`
 	Ratio        float64   `json:"Ratio"`
+	Username     string    `json:"username" binding:"required"`
 }
 
 type CostRequestResponse struct {
@@ -198,6 +199,7 @@ func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
 			Min_volume:   costRequest.Min_volume,
 			Max_volume:   costRequest.Max_volume,
 			Ratio:        costRequest.Ratio,
+			Username:     costRequest.User.Username,
 		})
 	}
 

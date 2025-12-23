@@ -1275,6 +1275,9 @@
         },
         "handler.CostsRequestsFilterResponse": {
             "type": "object",
+            "required": [
+                "username"
+            ],
             "properties": {
                 "ClosedAt": {
                     "type": "string"
@@ -1305,6 +1308,9 @@
                 },
                 "id": {
                     "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },

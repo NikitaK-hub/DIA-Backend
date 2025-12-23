@@ -1281,6 +1281,9 @@ const docTemplate = `{
         },
         "handler.CostsRequestsFilterResponse": {
             "type": "object",
+            "required": [
+                "username"
+            ],
             "properties": {
                 "ClosedAt": {
                     "type": "string"
@@ -1311,6 +1314,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
