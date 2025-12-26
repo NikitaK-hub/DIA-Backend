@@ -48,6 +48,8 @@ func (r *CostRequestRepository) GetCostRequests(userID uint64, isModerator bool,
 	var requests []ds.Cost_request
 
 	query := r.db.
+		Preload("Price_request_for_cost").
+		Preload("Price_request_for_cost.Cost").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username")
 		}).
@@ -122,11 +124,11 @@ func (r *CostRequestRepository) FormRequest(id uint64, userID uint64) error {
 	})
 }
 
-func (r *CostRequestRepository) ResolveOrRejectRequest(id uint64, moderatorID uint64, status uint8) (float64, error) {
+func (r *CostRequestRepository) ResolveOrRejectRequest(id uint64, moderatorID uint64, status uint8) error {
 	if status != 4 && status != 5 {
-		return 0, errors.New("invalid status for moderator action")
+		return errors.New("invalid status for moderator action")
 	}
-	var calculatedRatio float64
+
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		var request ds.Cost_request
 		err := tx.
@@ -140,8 +142,6 @@ func (r *CostRequestRepository) ResolveOrRejectRequest(id uint64, moderatorID ui
 		}
 		logrus.Info(request.ID)
 
-		calculatedRatio = r.CalculateRatio(request.ID)
-
 		updates := map[string]any{
 			"status":       status,
 			"id_moderator": moderatorID,
@@ -150,7 +150,7 @@ func (r *CostRequestRepository) ResolveOrRejectRequest(id uint64, moderatorID ui
 
 		return tx.Model(&request).Updates(updates).Error
 	})
-	return calculatedRatio, err
+	return err
 }
 
 func (r *CostRequestRepository) DeleteCostRequest(id uint64, userID uint64) error {
@@ -222,6 +222,20 @@ func (r *CostRequestRepository) UpdateCostRequest(id uint64, Min_volume *uint64,
 	return r.db.
 		Model(&ds.Cost_request{}).
 		Where("id = ? AND status != 2", id).
+		Updates(updates).Error
+}
+
+func (r *CostRequestRepository) UpdateCostRequestEmission(id uint64, Ratio float64) error {
+	updates := make(map[string]any)
+	updates["ratio"] = Ratio
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return r.db.
+		Model(&ds.Cost_request{}).
+		Where("id = ? AND status = 4", id).
 		Updates(updates).Error
 }
 

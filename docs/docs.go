@@ -401,6 +401,77 @@ const docTemplate = `{
                 }
             }
         },
+        "/cost-requests/{id}/async-update": {
+            "put": {
+                "description": "Update ratio in request asynchronously using secret key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cost-requests"
+                ],
+                "summary": "Asynchronously update ratio in request",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cost Request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update ratio",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.AsyncUpdateRequestRatioRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/cost-requests/{id}/form": {
             "put": {
                 "security": [
@@ -1202,6 +1273,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handler.AsyncUpdateRequestRatioRequest": {
+            "type": "object",
+            "required": [
+                "Ratio",
+                "key"
+            ],
+            "properties": {
+                "Ratio": {
+                    "type": "number"
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
         "handler.CostRequestDetailResponse": {
             "type": "object",
             "properties": {

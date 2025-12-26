@@ -3,11 +3,17 @@ package handler
 import (
 	"DIA_Backend/internal/app/repository"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func RegisterHandlers(router *gin.Engine, repo *repository.Repository) {
+	// apiRouter := router.Group("/api", SetCorsHeaders)
 	apiRouter := router.Group("/api")
+	apiRouter.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowCredentials: true,
+	}))
 	userHandler := NewUserHandler(repo)
 
 	publicRouter := apiRouter.Group("")
@@ -55,6 +61,8 @@ func RegisterHandlers(router *gin.Engine, repo *repository.Repository) {
 		requestRouter.PUT("/:id/resolve", userHandler.ScopeMiddleware("resolve:requests"), requestHandler.ResolveCostRequest)
 		requestRouter.PUT("/:id/reject", userHandler.ScopeMiddleware("reject:requests"), requestHandler.RejectCostRequest)
 		requestRouter.DELETE("/:id", userHandler.ScopeMiddleware("update:requests"), requestHandler.DeleteCostRequest)
+
+		publicRouter.PUT("/cost-requests/:id/async-update", requestHandler.AsyncUpdateRequestRatio)
 	}
 
 	requestCostHandler := NewPriceRequestToCostHandler(repo)

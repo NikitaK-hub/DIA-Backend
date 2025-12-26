@@ -115,3 +115,7 @@ func GetUserFromContext(ctx *gin.Context) (userUUID string, scopes []string, ok 
 
 	return userUUID, scopes, true
 }
+
+// func SetCorsHeaders(gCtx *gin.Context) {
+// 	gCtx.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+// }

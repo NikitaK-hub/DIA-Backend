@@ -3,7 +3,10 @@ package handler
 import (
 	"DIA_Backend/internal/app/ds"
 	"DIA_Backend/internal/app/repository"
+	"bytes"
+	"encoding/json"
 	"net/http"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -28,7 +31,7 @@ type CostsRequestsFilterResponse struct {
 	CreatedAt    time.Time `json:"CreatedAt"`
 	FormedAt     time.Time `json:"FormedAt"`
 	ClosedAt     time.Time `json:"ClosedAt"`
-	Ratio        float64   `json:"Ratio"`
+	Ratio        float64   `json:"Ratio,omitempty"`
 	Username     string    `json:"username" binding:"required"`
 }
 
@@ -45,7 +48,7 @@ type CostRequestDetailResponse struct {
 	CreatedAt           time.Time                          `json:"created_at"`
 	Min_volume          uint64                             `json:"Min_volume"`
 	Max_volume          uint64                             `json:"Max_volume"`
-	Ratio               float64                            `json:"Ratio"`
+	Ratio               float64                            `json:"Ratio,omitempty"`
 	PriceRequestToCosts []PriceRequestToCostDetailResponse `json:"price_request_to_costs"`
 	Status              uint8                              `json:"status"`
 }
@@ -69,6 +72,11 @@ type CostRequestInfoResponse struct {
 type UpdateCostRequestResponse struct {
 	Min_volume *uint64 `json:"Min_volume"`
 	Max_volume *uint64 `json:"Max_volume"`
+}
+
+type AsyncUpdateRequestRatioRequest struct {
+	Key   string  `json:"key" binding:"required"`
+	Ratio float64 `json:"Ratio" binding:"required"`
 }
 
 // @Summary      Get draft request info
@@ -310,6 +318,43 @@ func (h *CostRequestHandler) UpdateCostRequest(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Cost request updated successfully"})
 }
 
+// AsyncUpdateRequestRatio godoc
+// @Summary      Asynchronously update ratio in request
+// @Description  Update ratio in request asynchronously using secret key
+// @Tags         cost-requests
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Cost Request ID"
+// @Param        request body AsyncUpdateRequestRatioRequest true "Update ratio"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /cost-requests/{id}/async-update [put]
+func (h *CostRequestHandler) AsyncUpdateRequestRatio(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid cost request ID"})
+		return
+	}
+
+	var req AsyncUpdateRequestRatioRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		return
+	}
+
+	if req.Key != os.Getenv("ASYNC_CALC_KEY") {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	h.repo.CostRequest.UpdateCostRequestEmission(id, req.Ratio)
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Request lamps updated successfully"})
+}
+
 // @Summary      Form cost request
 // @Description  Form a draft cost request into a submitted request
 // @Tags         cost-requests
@@ -387,23 +432,44 @@ func (h *CostRequestHandler) ResolveCostRequest(ctx *gin.Context) {
 		return
 	}
 
-	deliveryDate := time.Now().AddDate(0, 1, 0)
+	request, err := h.repo.CostRequest.GetCostRequestByID(id, user.ID, user.Role == 1)
 
-	calculatedRatio, err := h.repo.CostRequest.ResolveOrRejectRequest(id, user.ID, 4)
+	requestJSON, err := json.Marshal(request)
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize request"})
+		return
+	}
+
+	calcServiceURL := os.Getenv("ASYNC_CALC_TOTAL_EMISSION_URL")
+	if calcServiceURL == "" {
+		logrus.Error("CalcService URL is not configured")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Calculation service not configured"})
+		return
+	}
+
+	err = h.repo.CostRequest.ResolveOrRejectRequest(id, user.ID, 4)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	response := gin.H{
-		"message": "Cost request resolved successfully",
-		"calculated_data": gin.H{
-			"ratio calculation result": calculatedRatio,
-			"delivery_date":            deliveryDate.Format("2006-01-02"),
-		},
+	resp, err := http.Post(calcServiceURL, "application/json", bytes.NewBuffer(requestJSON))
+	if err != nil {
+		logrus.Error(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call calculation service"})
+		return
 	}
-	ctx.JSON(http.StatusOK, response)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logrus.Errorf("Calculation service returned status: %d", resp.StatusCode)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Calculation service failed"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Request resolved successfully"})
 }
 
 // @Summary      Reject cost request
@@ -443,7 +509,7 @@ func (h *CostRequestHandler) RejectCostRequest(ctx *gin.Context) {
 		return
 	}
 
-	_, err = h.repo.CostRequest.ResolveOrRejectRequest(id, user.ID, 5)
+	err = h.repo.CostRequest.ResolveOrRejectRequest(id, user.ID, 5)
 	if err != nil {
 		logrus.Error(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

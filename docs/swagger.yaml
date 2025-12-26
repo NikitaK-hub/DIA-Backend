@@ -1,5 +1,15 @@
 basePath: /api
 definitions:
+  handler.AsyncUpdateRequestRatioRequest:
+    properties:
+      Ratio:
+        type: number
+      key:
+        type: string
+    required:
+    - Ratio
+    - key
+    type: object
   handler.CostRequestDetailResponse:
     properties:
       Max_volume:
@@ -418,6 +428,53 @@ paths:
       security:
       - BearerAuth: []
       summary: Update cost request
+      tags:
+      - cost-requests
+  /cost-requests/{id}/async-update:
+    put:
+      consumes:
+      - application/json
+      description: Update ratio in request asynchronously using secret key
+      parameters:
+      - description: Cost Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update ratio
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AsyncUpdateRequestRatioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Asynchronously update ratio in request
       tags:
       - cost-requests
   /cost-requests/{id}/form:
