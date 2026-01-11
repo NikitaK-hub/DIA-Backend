@@ -67,9 +67,11 @@ func (r *CostRequestRepository) GetCostRequests(userID uint64, isModerator bool,
 	}
 
 	if dateFrom != nil {
+		// Заявки, сформированные после или в указанную дату (начало дня)
 		query = query.Where("formed_at >= ?", dateFrom)
 	}
 	if dateTo != nil {
+		// Заявки, сформированные до или в указанную дату (конец дня)
 		query = query.Where("formed_at <= ?", dateTo)
 	}
 

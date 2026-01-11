@@ -176,13 +176,16 @@ func (h *CostRequestHandler) GetCostRequests(ctx *gin.Context) {
 	}
 
 	var dateFrom, dateTo *time.Time
-	if dateFromStr := ctx.Query("date_from"); dateFromStr != "" {
+	if dateFromStr := ctx.Query("dateFrom"); dateFromStr != "" {
 		if parsed, err := time.Parse("2006-01-02", dateFromStr); err == nil {
+			// Начало дня для dateFrom
 			dateFrom = &parsed
 		}
 	}
-	if dateToStr := ctx.Query("date_to"); dateToStr != "" {
+	if dateToStr := ctx.Query("dateTo"); dateToStr != "" {
 		if parsed, err := time.Parse("2006-01-02", dateToStr); err == nil {
+			// Конец дня для dateTo (включаем весь указанный день)
+			parsed = parsed.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
 			dateTo = &parsed
 		}
 	}
